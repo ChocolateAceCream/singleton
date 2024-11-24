@@ -17,9 +17,9 @@ func TestNewSingleton_LocalRedis(t *testing.T) {
 		Password: "", // No password set
 		DB:       0,  // Use default DB
 	}
-
+	s := &Singleton{}
 	// Create the singleton instance with the Redis client
-	s, err := NewSingleton(WithRedisClient(redisOptions))
+	err := s.AddPlugin(WithRedisClient(redisOptions))
 	if err != nil {
 		t.Fatalf("failed to create singleton: %v", err)
 	}

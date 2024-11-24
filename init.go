@@ -10,8 +10,7 @@ type Singleton struct {
 
 type Option func(*Singleton) error
 
-func NewSingleton(opts ...Option) (s *Singleton, err error) {
-	s = &Singleton{}
+func (s *Singleton) AddPlugin(opts ...Option) (err error) {
 	for _, opt := range opts {
 		err = opt(s)
 		if err != nil {
