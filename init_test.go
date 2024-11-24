@@ -49,3 +49,40 @@ func TestNewSingleton_LocalRedis(t *testing.T) {
 	}
 	log.Println("Successfully deleted test_key from Redis")
 }
+
+type Config struct {
+	Version string `mapstructure:"version" yaml:"version"`
+	Level   string `mapstructure:"level" yaml:"level"`
+}
+
+func TestNewSingleton_WithViper(t *testing.T) {
+	// Define the configuration file details
+	options := ViperOptions{
+		Path:     "./",      // Current directory
+		FileName: "config",  // Name of the config file without extension
+		FileType: "yaml",    // File type
+		EnvName:  "release", // Environment section to read
+		Target:   &Config{}, // Target to unmarshal into
+	}
+
+	s := &Singleton{}
+
+	// Add the Viper plugin to the Singleton instance
+	err := s.AddPlugin(WithViper(options))
+	if err != nil {
+		t.Fatalf("failed to create singleton with Viper: %v", err)
+	}
+
+	// Assert that the Singleton instance and Viper client are initialized
+	assert.NotNil(t, s, "expected singleton instance to be non-nil")
+	assert.NotNil(t, s.Viper, "expected Viper instance to be initialized")
+
+	// Assert that the configuration was read and unmarshaled correctly
+	config := options.Target.(*Config) // Cast the target back to the Config type
+	assert.Equal(t, "1.0.0", config.Version, "expected Release.Version to match")
+	assert.Equal(t, "release", config.Level, "expected Debug.Level to match")
+
+	log.Println("Successfully read configuration using Viper:")
+	log.Printf("Release Version: %s", config.Version)
+	log.Printf("Debug Level: %s", config.Level)
+}

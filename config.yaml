@@ -1,0 +1,6 @@
+release:
+  version: 1.0.0
+  level: release
+debug:
+  version: 2.0.0
+  level: debug
