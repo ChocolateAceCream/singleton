@@ -147,7 +147,7 @@ func TestNewSingleton_WithZapLogger(t *testing.T) {
 		Prefix:            "[github.com/ChocolateAceCream/test-service]",
 		EncodeLevel:       "LowercaseColorLevelEncoder",
 		ServiceName:       "test-service",
-		OutputPath:        logFilePath,
+		OutputPath:        []string{logFilePath},
 	}
 
 	// Initialize the Singleton

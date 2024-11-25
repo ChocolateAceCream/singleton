@@ -15,7 +15,7 @@ type ZapOptions struct {
 	Prefix            string
 	EncodeLevel       string
 	ServiceName       string
-	OutputPath        string
+	OutputPath        []string
 }
 
 func WithZapLogger(options ZapOptions) Option {
@@ -23,6 +23,9 @@ func WithZapLogger(options ZapOptions) Option {
 		encoderConfig := GetEncoderConfig(options)
 		level := zap.NewAtomicLevelAt(zapcore.Level(options.LogLevel)) // log level
 		development := options.Development
+		if len(options.OutputPath) == 0 {
+			options.OutputPath = []string{"stdout"}
+		}
 		config := zap.Config{
 			Level:             level,
 			Development:       development,
@@ -30,7 +33,7 @@ func WithZapLogger(options ZapOptions) Option {
 			Encoding:          options.EncodingFormat,
 			EncoderConfig:     encoderConfig,
 			InitialFields:     map[string]interface{}{"serviceName": options.ServiceName},
-			OutputPaths:       []string{"stdout", options.OutputPath},
+			OutputPaths:       options.OutputPath,
 			ErrorOutputPaths:  []string{"stderr"},
 		}
 		logger, err := config.Build()
