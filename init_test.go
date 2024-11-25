@@ -3,6 +3,7 @@ package singleton
 import (
 	"context"
 	"log"
+	"os"
 	"testing"
 	"time"
 
@@ -127,4 +128,58 @@ func TestNewSingleton_WithPGSQL(t *testing.T) {
 	}
 
 	log.Println("Successfully connected to PostgreSQL database")
+}
+
+func TestNewSingleton_WithZapLogger(t *testing.T) {
+	// Define the logger options
+	logFilePath := "./test-service.log"
+	// Clean the log file
+	err := os.WriteFile(logFilePath, []byte{}, 0644)
+	if err != nil {
+		t.Fatalf("failed to clean log file: %v", err)
+	}
+	// Define the logger options
+	options := ZapOptions{
+		LogLevel:          0, // Info level
+		Development:       false,
+		DisableStacktrace: true,
+		EncodingFormat:    "console",
+		Prefix:            "[github.com/ChocolateAceCream/test-service]",
+		EncodeLevel:       "LowercaseColorLevelEncoder",
+		ServiceName:       "test-service",
+		OutputPath:        logFilePath,
+	}
+
+	// Initialize the Singleton
+	s := &Singleton{}
+
+	// Add the Zap logger plugin
+	err = s.AddPlugin(WithZapLogger(options))
+	if err != nil {
+		t.Fatalf("failed to create singleton with Zap logger: %v", err)
+	}
+
+	// Assert that the Singleton instance and logger are initialized
+	assert.NotNil(t, s, "expected singleton instance to be non-nil")
+	assert.NotNil(t, s.Logger, "expected Zap logger instance to be initialized")
+
+	// Ensure the logger writes logs as expected
+	s.Logger.Info("This is an info log")
+	s.Logger.Warn("This is a warning log")
+	s.Logger.Error("This is an error log")
+
+	// Read the log file
+	logData, err := os.ReadFile(logFilePath)
+	if err != nil {
+		t.Fatalf("failed to read log file: %v", err)
+	}
+	logOutput := string(logData)
+	// Verify the logs in the file
+	assert.Contains(t, logOutput, "This is an info log", "expected info log to be present in the log file")
+	assert.Contains(t, logOutput, "This is a warning log", "expected warning log to be present in the log file")
+	assert.Contains(t, logOutput, "This is an error log", "expected error log to be present in the log file")
+	assert.Contains(t, logOutput, "[github.com/ChocolateAceCream/test-service]", "expected prefix to be present in the log file")
+
+	// Example log output (for debugging purposes)
+	t.Log("Logger configured successfully")
 }
