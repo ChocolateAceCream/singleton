@@ -86,3 +86,45 @@ func TestNewSingleton_WithViper(t *testing.T) {
 	log.Printf("Release Version: %s", config.Version)
 	log.Printf("Debug Level: %s", config.Level)
 }
+
+func TestNewSingleton_WithPGSQL(t *testing.T) {
+	// Define the PostgreSQL options
+	options := PGSQLOptions{
+		Source:          "postgresql://nuodi:123qwe@localhost:5555/iot_backend?sslmode=disable",
+		MaxConns:        10,
+		MaxConnIdleTime: time.Hour,
+	}
+
+	s := &Singleton{}
+
+	// Add the PostgreSQL plugin to the Singleton instance
+	err := s.AddPlugin(WithPGSQL(options))
+	if err != nil {
+		t.Fatalf("failed to create singleton with PGSQL: %v", err)
+	}
+
+	// Assert that the Singleton instance and PostgreSQL connection pool are initialized
+	assert.NotNil(t, s, "expected singleton instance to be non-nil")
+	assert.NotNil(t, s.PGPool, "expected PostgreSQL pool to be initialized")
+
+	// Check the PostgreSQL connection pool configuration
+	config := s.PGPool.Config()
+	assert.Equal(t, options.MaxConns, config.MaxConns, "expected MaxConns to match")
+	assert.Equal(t, options.MaxConnIdleTime, config.MaxConnIdleTime, "expected MaxConnIdleTime to match")
+
+	// Test if the PostgreSQL connection pool is functional
+	ctx := context.Background()
+	conn, err := s.PGPool.Acquire(ctx)
+	if err != nil {
+		t.Fatalf("failed to acquire connection from PGPool: %v", err)
+	}
+	defer conn.Release()
+
+	// Verify that the connection is valid
+	err = conn.Conn().Ping(ctx)
+	if err != nil {
+		t.Fatalf("failed to ping PostgreSQL database: %v", err)
+	}
+
+	log.Println("Successfully connected to PostgreSQL database")
+}
